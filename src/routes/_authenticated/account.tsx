@@ -16,11 +16,12 @@ export const Route = createFileRoute("/_authenticated/account")({
 function AccountPage() {
   const { user } = useAuth();
   const fn = useServerFn(getMyTickets);
-  const { data = [], isLoading } = useQuery({ queryKey: ["my-tickets"], queryFn: () => fn() });
+  const { data, isLoading } = useQuery({ queryKey: ["my-tickets"], queryFn: () => fn() });
 
   // group by competition
+  const tickets = Array.isArray(data) ? data : [];
   const grouped = new Map<string, { comp: any; numbers: number[] }>();
-  for (const t of data) {
+  for (const t of tickets) {
     const c = (t as any).competitions;
     if (!c) continue;
     const key = c.slug;
