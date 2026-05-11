@@ -1,24 +1,22 @@
 import { EmbeddedCheckoutProvider, EmbeddedCheckout } from "@stripe/react-stripe-js";
 import { useServerFn } from "@tanstack/react-start";
-import { useCallback, useMemo } from "react";
+import { useCallback, useMemo, useRef } from "react";
 import { getStripe, getStripeEnvironment } from "@/lib/stripe";
 import { createTicketCheckout } from "@/lib/checkout.functions";
-import { useAuth } from "@/hooks/use-auth";
 
 interface Props {
   competitionId: string;
   quantity: number;
+  accessToken: string;
   onClose?: () => void;
 }
 
-export function TicketEmbeddedCheckout({ competitionId, quantity }: Props) {
+export function TicketEmbeddedCheckout({ competitionId, quantity, accessToken }: Props) {
   const fn = useServerFn(createTicketCheckout);
-  const { session } = useAuth();
+  const checkoutRequest = useRef({ competitionId, quantity, accessToken });
 
   const fetchClientSecret = useCallback(async () => {
-    const accessToken = session?.access_token;
-    if (!accessToken) throw new Error("Please sign in again before checking out.");
-
+    const { competitionId, quantity, accessToken } = checkoutRequest.current;
     const res = await fn({
       data: {
         competitionId,
@@ -32,7 +30,7 @@ export function TicketEmbeddedCheckout({ competitionId, quantity }: Props) {
       throw new Error("Unable to start checkout. Please try again.");
     }
     return res.clientSecret;
-  }, [fn, competitionId, quantity, session?.access_token]);
+  }, [fn]);
 
   const options = useMemo(() => ({ fetchClientSecret }), [fetchClientSecret]);
 

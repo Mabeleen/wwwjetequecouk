@@ -52,7 +52,7 @@ function CompetitionDetail() {
     initialData: initial,
   });
 
-  const { user } = useAuth();
+  const { user, session } = useAuth();
   const [qty, setQty] = useState(1);
   const [activeImg, setActiveImg] = useState(0);
   const [checkoutOpen, setCheckoutOpen] = useState(false);
@@ -187,8 +187,8 @@ function CompetitionDetail() {
                   <DialogHeader>
                     <DialogTitle>Complete your purchase</DialogTitle>
                   </DialogHeader>
-                  {checkoutOpen && c && (
-                    <TicketEmbeddedCheckout competitionId={c.id} quantity={qty} />
+                  {checkoutOpen && c && session?.access_token && (
+                    <TicketEmbeddedCheckout competitionId={c.id} quantity={qty} accessToken={session.access_token} />
                   )}
                 </DialogContent>
               </Dialog>
