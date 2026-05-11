@@ -1,16 +1,16 @@
 import { createFileRoute, Link, useNavigate, notFound } from "@tanstack/react-router";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { getCompetitionBySlug } from "@/lib/competitions.functions";
-import { createTicketCheckout } from "@/lib/checkout.functions";
 import { useAuth } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { TicketEmbeddedCheckout } from "@/components/ticket-embedded-checkout";
 import { formatGBP, formatDate, daysUntil } from "@/lib/format";
 import { MapPin, Calendar, Ticket, Check, Minus, Plus, Trophy, ArrowLeft } from "lucide-react";
 import { useState } from "react";
-import { toast } from "sonner";
 
 export const Route = createFileRoute("/competitions/$slug")({
   loader: async ({ params }) => {
@@ -53,21 +53,9 @@ function CompetitionDetail() {
   });
 
   const { user } = useAuth();
-  const navigate = useNavigate();
-  const qc = useQueryClient();
   const [qty, setQty] = useState(1);
   const [activeImg, setActiveImg] = useState(0);
-  const checkoutFn = useServerFn(createTicketCheckout);
-
-  const buy = useMutation({
-    mutationFn: () => checkoutFn({ data: { competitionId: c!.id, quantity: qty } }),
-    onSuccess: (res) => {
-      window.location.href = res.url;
-    },
-    onError: (e: Error) => toast.error(e.message),
-  });
-  void navigate;
-  void qc;
+  const [checkoutOpen, setCheckoutOpen] = useState(false);
 
   if (!c) return null;
   const remaining = c.total_tickets - c.sold;
@@ -182,17 +170,28 @@ function CompetitionDetail() {
                 <Button
                   size="lg"
                   className="mt-4 w-full bg-gradient-sunset border-0 h-12 font-extrabold shadow-glow"
-                  disabled={buy.isPending || remaining === 0}
-                  onClick={() => buy.mutate()}
+                  disabled={remaining === 0}
+                  onClick={() => setCheckoutOpen(true)}
                 >
                   <Ticket className="mr-2 h-4 w-4" />
-                  {remaining === 0 ? "Sold out" : buy.isPending ? "Securing tickets…" : `Buy ${qty} ticket${qty > 1 ? "s" : ""}`}
+                  {remaining === 0 ? "Sold out" : `Buy ${qty} ticket${qty > 1 ? "s" : ""}`}
                 </Button>
               ) : (
                 <Button asChild size="lg" className="mt-4 w-full bg-gradient-sunset border-0 h-12 font-extrabold shadow-glow">
                   <Link to="/auth">Sign in to enter</Link>
                 </Button>
               )}
+
+              <Dialog open={checkoutOpen} onOpenChange={setCheckoutOpen}>
+                <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+                  <DialogHeader>
+                    <DialogTitle>Complete your purchase</DialogTitle>
+                  </DialogHeader>
+                  {checkoutOpen && c && (
+                    <TicketEmbeddedCheckout competitionId={c.id} quantity={qty} />
+                  )}
+                </DialogContent>
+              </Dialog>
 
               <p className="mt-3 text-xs text-center text-muted-foreground flex items-center justify-center gap-1">
                 <Trophy className="h-3 w-3 text-gold" /> Live draw on {formatDate(c.draw_date)} · 18+ only
