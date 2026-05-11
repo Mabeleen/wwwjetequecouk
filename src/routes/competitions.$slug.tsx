@@ -2,7 +2,7 @@ import { createFileRoute, Link, useNavigate, notFound } from "@tanstack/react-ro
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { getCompetitionBySlug } from "@/lib/competitions.functions";
-import { purchaseTickets } from "@/lib/tickets.functions";
+import { createTicketCheckout } from "@/lib/checkout.functions";
 import { useAuth } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -57,21 +57,17 @@ function CompetitionDetail() {
   const qc = useQueryClient();
   const [qty, setQty] = useState(1);
   const [activeImg, setActiveImg] = useState(0);
-  const buyFn = useServerFn(purchaseTickets);
+  const checkoutFn = useServerFn(createTicketCheckout);
 
   const buy = useMutation({
-    mutationFn: () => buyFn({ data: { competitionId: c!.id, quantity: qty } }),
+    mutationFn: () => checkoutFn({ data: { competitionId: c!.id, quantity: qty } }),
     onSuccess: (res) => {
-      toast.success(`${res.ticketNumbers.length} ticket${res.ticketNumbers.length > 1 ? "s" : ""} secured!`, {
-        description: `Your numbers: ${res.ticketNumbers.slice(0, 5).join(", ")}${res.ticketNumbers.length > 5 ? "…" : ""}`,
-      });
-      qc.invalidateQueries({ queryKey: ["competition", slug] });
-      qc.invalidateQueries({ queryKey: ["competitions"] });
-      qc.invalidateQueries({ queryKey: ["my-tickets"] });
-      navigate({ to: "/account" });
+      window.location.href = res.url;
     },
     onError: (e: Error) => toast.error(e.message),
   });
+  void navigate;
+  void qc;
 
   if (!c) return null;
   const remaining = c.total_tickets - c.sold;
