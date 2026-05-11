@@ -4,7 +4,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { getCompetitions } from "@/lib/competitions.functions";
 import { CompetitionCard } from "@/components/competition-card";
 
-export const Route = createFileRoute("/competitions")({
+export const Route = createFileRoute("/competitions/")({
   head: () => ({
     meta: [
       { title: "All Live Competitions — JETEQUE" },

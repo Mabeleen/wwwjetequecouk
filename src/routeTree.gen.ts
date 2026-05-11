@@ -13,10 +13,10 @@ import { Route as WinnersRouteImport } from './routes/winners'
 import { Route as UnsubscribeRouteImport } from './routes/unsubscribe'
 import { Route as HowItWorksRouteImport } from './routes/how-it-works'
 import { Route as FaqRouteImport } from './routes/faq'
-import { Route as CompetitionsRouteImport } from './routes/competitions'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AuthenticatedRouteImport } from './routes/_authenticated'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as CompetitionsIndexRouteImport } from './routes/competitions.index'
 import { Route as EmailUnsubscribeRouteImport } from './routes/email/unsubscribe'
 import { Route as CompetitionsSlugRouteImport } from './routes/competitions.$slug'
 import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated/admin'
@@ -48,11 +48,6 @@ const FaqRoute = FaqRouteImport.update({
   path: '/faq',
   getParentRoute: () => rootRouteImport,
 } as any)
-const CompetitionsRoute = CompetitionsRouteImport.update({
-  id: '/competitions',
-  path: '/competitions',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const AuthRoute = AuthRouteImport.update({
   id: '/auth',
   path: '/auth',
@@ -65,6 +60,11 @@ const AuthenticatedRoute = AuthenticatedRouteImport.update({
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CompetitionsIndexRoute = CompetitionsIndexRouteImport.update({
+  id: '/competitions/',
+  path: '/competitions/',
   getParentRoute: () => rootRouteImport,
 } as any)
 const EmailUnsubscribeRoute = EmailUnsubscribeRouteImport.update({
@@ -126,7 +126,6 @@ const ApiPublicPaymentsWebhookRoute =
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
-  '/competitions': typeof CompetitionsRouteWithChildren
   '/faq': typeof FaqRoute
   '/how-it-works': typeof HowItWorksRoute
   '/unsubscribe': typeof UnsubscribeRoute
@@ -135,6 +134,7 @@ export interface FileRoutesByFullPath {
   '/admin': typeof AuthenticatedAdminRoute
   '/competitions/$slug': typeof CompetitionsSlugRoute
   '/email/unsubscribe': typeof EmailUnsubscribeRoute
+  '/competitions/': typeof CompetitionsIndexRoute
   '/checkout/success': typeof AuthenticatedCheckoutSuccessRoute
   '/lovable/email/suppression': typeof LovableEmailSuppressionRoute
   '/api/public/payments/webhook': typeof ApiPublicPaymentsWebhookRoute
@@ -145,7 +145,6 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
-  '/competitions': typeof CompetitionsRouteWithChildren
   '/faq': typeof FaqRoute
   '/how-it-works': typeof HowItWorksRoute
   '/unsubscribe': typeof UnsubscribeRoute
@@ -154,6 +153,7 @@ export interface FileRoutesByTo {
   '/admin': typeof AuthenticatedAdminRoute
   '/competitions/$slug': typeof CompetitionsSlugRoute
   '/email/unsubscribe': typeof EmailUnsubscribeRoute
+  '/competitions': typeof CompetitionsIndexRoute
   '/checkout/success': typeof AuthenticatedCheckoutSuccessRoute
   '/lovable/email/suppression': typeof LovableEmailSuppressionRoute
   '/api/public/payments/webhook': typeof ApiPublicPaymentsWebhookRoute
@@ -166,7 +166,6 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/_authenticated': typeof AuthenticatedRouteWithChildren
   '/auth': typeof AuthRoute
-  '/competitions': typeof CompetitionsRouteWithChildren
   '/faq': typeof FaqRoute
   '/how-it-works': typeof HowItWorksRoute
   '/unsubscribe': typeof UnsubscribeRoute
@@ -175,6 +174,7 @@ export interface FileRoutesById {
   '/_authenticated/admin': typeof AuthenticatedAdminRoute
   '/competitions/$slug': typeof CompetitionsSlugRoute
   '/email/unsubscribe': typeof EmailUnsubscribeRoute
+  '/competitions/': typeof CompetitionsIndexRoute
   '/_authenticated/checkout/success': typeof AuthenticatedCheckoutSuccessRoute
   '/lovable/email/suppression': typeof LovableEmailSuppressionRoute
   '/api/public/payments/webhook': typeof ApiPublicPaymentsWebhookRoute
@@ -187,7 +187,6 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/auth'
-    | '/competitions'
     | '/faq'
     | '/how-it-works'
     | '/unsubscribe'
@@ -196,6 +195,7 @@ export interface FileRouteTypes {
     | '/admin'
     | '/competitions/$slug'
     | '/email/unsubscribe'
+    | '/competitions/'
     | '/checkout/success'
     | '/lovable/email/suppression'
     | '/api/public/payments/webhook'
@@ -206,7 +206,6 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/auth'
-    | '/competitions'
     | '/faq'
     | '/how-it-works'
     | '/unsubscribe'
@@ -215,6 +214,7 @@ export interface FileRouteTypes {
     | '/admin'
     | '/competitions/$slug'
     | '/email/unsubscribe'
+    | '/competitions'
     | '/checkout/success'
     | '/lovable/email/suppression'
     | '/api/public/payments/webhook'
@@ -226,7 +226,6 @@ export interface FileRouteTypes {
     | '/'
     | '/_authenticated'
     | '/auth'
-    | '/competitions'
     | '/faq'
     | '/how-it-works'
     | '/unsubscribe'
@@ -235,6 +234,7 @@ export interface FileRouteTypes {
     | '/_authenticated/admin'
     | '/competitions/$slug'
     | '/email/unsubscribe'
+    | '/competitions/'
     | '/_authenticated/checkout/success'
     | '/lovable/email/suppression'
     | '/api/public/payments/webhook'
@@ -247,12 +247,12 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AuthenticatedRoute: typeof AuthenticatedRouteWithChildren
   AuthRoute: typeof AuthRoute
-  CompetitionsRoute: typeof CompetitionsRouteWithChildren
   FaqRoute: typeof FaqRoute
   HowItWorksRoute: typeof HowItWorksRoute
   UnsubscribeRoute: typeof UnsubscribeRoute
   WinnersRoute: typeof WinnersRoute
   EmailUnsubscribeRoute: typeof EmailUnsubscribeRoute
+  CompetitionsIndexRoute: typeof CompetitionsIndexRoute
   LovableEmailSuppressionRoute: typeof LovableEmailSuppressionRoute
   ApiPublicPaymentsWebhookRoute: typeof ApiPublicPaymentsWebhookRoute
   LovableEmailQueueProcessRoute: typeof LovableEmailQueueProcessRoute
@@ -290,13 +290,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof FaqRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/competitions': {
-      id: '/competitions'
-      path: '/competitions'
-      fullPath: '/competitions'
-      preLoaderRoute: typeof CompetitionsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/auth': {
       id: '/auth'
       path: '/auth'
@@ -316,6 +309,13 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/competitions/': {
+      id: '/competitions/'
+      path: '/competitions'
+      fullPath: '/competitions/'
+      preLoaderRoute: typeof CompetitionsIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/email/unsubscribe': {
@@ -407,28 +407,16 @@ const AuthenticatedRouteWithChildren = AuthenticatedRoute._addFileChildren(
   AuthenticatedRouteChildren,
 )
 
-interface CompetitionsRouteChildren {
-  CompetitionsSlugRoute: typeof CompetitionsSlugRoute
-}
-
-const CompetitionsRouteChildren: CompetitionsRouteChildren = {
-  CompetitionsSlugRoute: CompetitionsSlugRoute,
-}
-
-const CompetitionsRouteWithChildren = CompetitionsRoute._addFileChildren(
-  CompetitionsRouteChildren,
-)
-
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AuthenticatedRoute: AuthenticatedRouteWithChildren,
   AuthRoute: AuthRoute,
-  CompetitionsRoute: CompetitionsRouteWithChildren,
   FaqRoute: FaqRoute,
   HowItWorksRoute: HowItWorksRoute,
   UnsubscribeRoute: UnsubscribeRoute,
   WinnersRoute: WinnersRoute,
   EmailUnsubscribeRoute: EmailUnsubscribeRoute,
+  CompetitionsIndexRoute: CompetitionsIndexRoute,
   LovableEmailSuppressionRoute: LovableEmailSuppressionRoute,
   ApiPublicPaymentsWebhookRoute: ApiPublicPaymentsWebhookRoute,
   LovableEmailQueueProcessRoute: LovableEmailQueueProcessRoute,
@@ -438,3 +426,13 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
