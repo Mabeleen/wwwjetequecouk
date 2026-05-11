@@ -73,9 +73,9 @@ const EmailUnsubscribeRoute = EmailUnsubscribeRouteImport.update({
   getParentRoute: () => rootRouteImport,
 } as any)
 const CompetitionsSlugRoute = CompetitionsSlugRouteImport.update({
-  id: '/$slug',
-  path: '/$slug',
-  getParentRoute: () => CompetitionsRoute,
+  id: '/competitions/$slug',
+  path: '/competitions/$slug',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const AuthenticatedAdminRoute = AuthenticatedAdminRouteImport.update({
   id: '/admin',
@@ -251,6 +251,7 @@ export interface RootRouteChildren {
   HowItWorksRoute: typeof HowItWorksRoute
   UnsubscribeRoute: typeof UnsubscribeRoute
   WinnersRoute: typeof WinnersRoute
+  CompetitionsSlugRoute: typeof CompetitionsSlugRoute
   EmailUnsubscribeRoute: typeof EmailUnsubscribeRoute
   CompetitionsIndexRoute: typeof CompetitionsIndexRoute
   LovableEmailSuppressionRoute: typeof LovableEmailSuppressionRoute
@@ -327,10 +328,10 @@ declare module '@tanstack/react-router' {
     }
     '/competitions/$slug': {
       id: '/competitions/$slug'
-      path: '/$slug'
+      path: '/competitions/$slug'
       fullPath: '/competitions/$slug'
       preLoaderRoute: typeof CompetitionsSlugRouteImport
-      parentRoute: typeof CompetitionsRoute
+      parentRoute: typeof rootRouteImport
     }
     '/_authenticated/admin': {
       id: '/_authenticated/admin'
@@ -415,6 +416,7 @@ const rootRouteChildren: RootRouteChildren = {
   HowItWorksRoute: HowItWorksRoute,
   UnsubscribeRoute: UnsubscribeRoute,
   WinnersRoute: WinnersRoute,
+  CompetitionsSlugRoute: CompetitionsSlugRoute,
   EmailUnsubscribeRoute: EmailUnsubscribeRoute,
   CompetitionsIndexRoute: CompetitionsIndexRoute,
   LovableEmailSuppressionRoute: LovableEmailSuppressionRoute,
@@ -426,13 +428,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}
