@@ -10,6 +10,7 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as WinnersRouteImport } from './routes/winners'
+import { Route as UnsubscribeRouteImport } from './routes/unsubscribe'
 import { Route as HowItWorksRouteImport } from './routes/how-it-works'
 import { Route as FaqRouteImport } from './routes/faq'
 import { Route as CompetitionsRouteImport } from './routes/competitions'
@@ -30,6 +31,11 @@ import { Route as ApiPublicPaymentsWebhookRouteImport } from './routes/api/publi
 const WinnersRoute = WinnersRouteImport.update({
   id: '/winners',
   path: '/winners',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const UnsubscribeRoute = UnsubscribeRouteImport.update({
+  id: '/unsubscribe',
+  path: '/unsubscribe',
   getParentRoute: () => rootRouteImport,
 } as any)
 const HowItWorksRoute = HowItWorksRouteImport.update({
@@ -123,6 +129,7 @@ export interface FileRoutesByFullPath {
   '/competitions': typeof CompetitionsRouteWithChildren
   '/faq': typeof FaqRoute
   '/how-it-works': typeof HowItWorksRoute
+  '/unsubscribe': typeof UnsubscribeRoute
   '/winners': typeof WinnersRoute
   '/account': typeof AuthenticatedAccountRoute
   '/admin': typeof AuthenticatedAdminRoute
@@ -141,6 +148,7 @@ export interface FileRoutesByTo {
   '/competitions': typeof CompetitionsRouteWithChildren
   '/faq': typeof FaqRoute
   '/how-it-works': typeof HowItWorksRoute
+  '/unsubscribe': typeof UnsubscribeRoute
   '/winners': typeof WinnersRoute
   '/account': typeof AuthenticatedAccountRoute
   '/admin': typeof AuthenticatedAdminRoute
@@ -161,6 +169,7 @@ export interface FileRoutesById {
   '/competitions': typeof CompetitionsRouteWithChildren
   '/faq': typeof FaqRoute
   '/how-it-works': typeof HowItWorksRoute
+  '/unsubscribe': typeof UnsubscribeRoute
   '/winners': typeof WinnersRoute
   '/_authenticated/account': typeof AuthenticatedAccountRoute
   '/_authenticated/admin': typeof AuthenticatedAdminRoute
@@ -181,6 +190,7 @@ export interface FileRouteTypes {
     | '/competitions'
     | '/faq'
     | '/how-it-works'
+    | '/unsubscribe'
     | '/winners'
     | '/account'
     | '/admin'
@@ -199,6 +209,7 @@ export interface FileRouteTypes {
     | '/competitions'
     | '/faq'
     | '/how-it-works'
+    | '/unsubscribe'
     | '/winners'
     | '/account'
     | '/admin'
@@ -218,6 +229,7 @@ export interface FileRouteTypes {
     | '/competitions'
     | '/faq'
     | '/how-it-works'
+    | '/unsubscribe'
     | '/winners'
     | '/_authenticated/account'
     | '/_authenticated/admin'
@@ -238,6 +250,7 @@ export interface RootRouteChildren {
   CompetitionsRoute: typeof CompetitionsRouteWithChildren
   FaqRoute: typeof FaqRoute
   HowItWorksRoute: typeof HowItWorksRoute
+  UnsubscribeRoute: typeof UnsubscribeRoute
   WinnersRoute: typeof WinnersRoute
   EmailUnsubscribeRoute: typeof EmailUnsubscribeRoute
   LovableEmailSuppressionRoute: typeof LovableEmailSuppressionRoute
@@ -254,6 +267,13 @@ declare module '@tanstack/react-router' {
       path: '/winners'
       fullPath: '/winners'
       preLoaderRoute: typeof WinnersRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/unsubscribe': {
+      id: '/unsubscribe'
+      path: '/unsubscribe'
+      fullPath: '/unsubscribe'
+      preLoaderRoute: typeof UnsubscribeRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/how-it-works': {
@@ -406,6 +426,7 @@ const rootRouteChildren: RootRouteChildren = {
   CompetitionsRoute: CompetitionsRouteWithChildren,
   FaqRoute: FaqRoute,
   HowItWorksRoute: HowItWorksRoute,
+  UnsubscribeRoute: UnsubscribeRoute,
   WinnersRoute: WinnersRoute,
   EmailUnsubscribeRoute: EmailUnsubscribeRoute,
   LovableEmailSuppressionRoute: LovableEmailSuppressionRoute,
@@ -417,3 +438,13 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
