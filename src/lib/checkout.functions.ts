@@ -61,40 +61,60 @@ export const createTicketCheckout = createServerFn({ method: "POST" })
     const email = (claims as any)?.email as string | undefined;
 
     // Create Embedded Checkout session
-    const session = await stripe.checkout.sessions.create({
-      mode: "payment",
-      ui_mode: "embedded_page",
-      return_url: `${origin}/checkout/success?session_id={CHECKOUT_SESSION_ID}`,
-      // Stripe accepts unix seconds; expire ~30 minutes (min 30, max 24h)
-      expires_at: Math.floor(Date.now() / 1000) + RESERVATION_TTL_MIN * 60,
-      line_items: [
-        {
-          quantity: data.quantity,
-          price_data: {
-            currency: "gbp",
-            unit_amount: comp.ticket_price_pence,
-            product_data: {
-              name: `${comp.title} — ${data.quantity} ticket${data.quantity > 1 ? "s" : ""}`,
-              description: `Holiday to ${comp.destination}. Draw will assign your ticket numbers if you win.`,
-              images: comp.hero_image ? [comp.hero_image] : undefined,
+    let session;
+    try {
+      session = await stripe.checkout.sessions.create({
+        mode: "payment",
+        ui_mode: "embedded_page",
+        return_url: `${origin}/checkout/success?session_id={CHECKOUT_SESSION_ID}`,
+        expires_at: Math.floor(Date.now() / 1000) + RESERVATION_TTL_MIN * 60,
+        line_items: [
+          {
+            quantity: data.quantity,
+            price_data: {
+              currency: "gbp",
+              unit_amount: comp.ticket_price_pence,
+              product_data: {
+                name: `${comp.title} — ${data.quantity} ticket${data.quantity > 1 ? "s" : ""}`,
+                description: `Holiday to ${comp.destination}. Draw will assign your ticket numbers if you win.`,
+                images: comp.hero_image ? [comp.hero_image] : undefined,
+              },
             },
           },
-        },
-      ],
-      ...(email && { customer_email: email }),
-      metadata: {
-        user_id: userId,
-        competition_id: comp.id,
-        ticket_numbers: picked.join(","),
-      },
-      payment_intent_data: {
+        ],
+        ...(email && { customer_email: email }),
         metadata: {
           user_id: userId,
           competition_id: comp.id,
           ticket_numbers: picked.join(","),
         },
-      },
-    });
+        payment_intent_data: {
+          metadata: {
+            user_id: userId,
+            competition_id: comp.id,
+            ticket_numbers: picked.join(","),
+          },
+        },
+      });
+    } catch (err: any) {
+      console.error("[checkout] stripe.checkout.sessions.create failed", {
+        message: err?.message,
+        type: err?.type,
+        code: err?.code,
+        raw: err?.raw,
+        env: getStripeEnv(),
+      });
+      throw new Error(`Stripe checkout failed: ${err?.message ?? "unknown"}`);
+    }
+
+    if (!session.client_secret) {
+      console.error("[checkout] missing client_secret on session", {
+        sessionId: session.id,
+        ui_mode: session.ui_mode,
+        status: session.status,
+      });
+      throw new Error("Stripe did not return a client_secret for embedded checkout");
+    }
 
     // Reserve tickets as unpaid, tied to this session
     const rows = picked.map((ticket_number) => ({
@@ -108,7 +128,7 @@ export const createTicketCheckout = createServerFn({ method: "POST" })
     if (insErr) throw new Error(insErr.message);
 
     return {
-      clientSecret: session.client_secret as string,
+      clientSecret: session.client_secret,
       sessionId: session.id,
       environment: getStripeEnv(),
     };
