@@ -187,8 +187,8 @@ function CompetitionDetail() {
                   <DialogHeader>
                     <DialogTitle>Complete your purchase</DialogTitle>
                   </DialogHeader>
-                  {checkoutOpen && c && (
-                    <TicketEmbeddedCheckout competitionId={c.id} quantity={qty} />
+                  {checkoutOpen && c && user && (
+                    <TicketEmbeddedCheckout competitionId={c.id} quantity={qty} accessToken={user.access_token} />
                   )}
                 </DialogContent>
               </Dialog>
