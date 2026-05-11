@@ -3,7 +3,9 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { z } from "zod";
 import { getRequestHost } from "@tanstack/react-start/server";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
-import { createCheckoutSession } from "./stripe.server";
+import { createStripeClient, getStripeEnv } from "./stripe.server";
+
+const RESERVATION_TTL_MIN = 30;
 
 export const createTicketCheckout = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
@@ -17,6 +19,7 @@ export const createTicketCheckout = createServerFn({ method: "POST" })
   )
   .handler(async ({ data, context }) => {
     const { userId, claims } = context;
+    const stripe = createStripeClient();
 
     // Load competition
     const { data: comp, error: cErr } = await supabaseAdmin
@@ -26,6 +29,15 @@ export const createTicketCheckout = createServerFn({ method: "POST" })
       .single();
     if (cErr || !comp) throw new Error("Competition not found");
     if (comp.status !== "live") throw new Error("Competition is not open");
+
+    // Sweep abandoned reservations (>30min, unpaid) before allocating
+    const cutoff = new Date(Date.now() - RESERVATION_TTL_MIN * 60_000).toISOString();
+    await supabaseAdmin
+      .from("tickets")
+      .delete()
+      .eq("competition_id", comp.id)
+      .eq("paid", false)
+      .lt("created_at", cutoff);
 
     // Pick random unsold ticket numbers
     const { data: taken } = await supabaseAdmin
@@ -46,22 +58,41 @@ export const createTicketCheckout = createServerFn({ method: "POST" })
     const host = getRequestHost();
     const proto = host.includes("localhost") ? "http" : "https";
     const origin = `${proto}://${host}`;
-
-    // Create Stripe Checkout Session FIRST so we have session id to attach
     const email = (claims as any)?.email as string | undefined;
-    const session = await createCheckoutSession({
-      amountPence: comp.ticket_price_pence,
-      quantity: data.quantity,
-      productName: `${comp.title} — ${data.quantity} ticket${data.quantity > 1 ? "s" : ""}`,
-      productDescription: `Holiday to ${comp.destination}. Draw will assign your ticket numbers if you win.`,
-      imageUrl: comp.hero_image,
-      successUrl: `${origin}/checkout/success?session_id={CHECKOUT_SESSION_ID}`,
-      cancelUrl: `${origin}/competitions/${comp.slug}?cancelled=1`,
-      customerEmail: email,
+
+    // Create Embedded Checkout session
+    const session = await stripe.checkout.sessions.create({
+      mode: "payment",
+      ui_mode: "embedded_page",
+      return_url: `${origin}/checkout/success?session_id={CHECKOUT_SESSION_ID}`,
+      // Stripe accepts unix seconds; expire ~30 minutes (min 30, max 24h)
+      expires_at: Math.floor(Date.now() / 1000) + RESERVATION_TTL_MIN * 60,
+      line_items: [
+        {
+          quantity: data.quantity,
+          price_data: {
+            currency: "gbp",
+            unit_amount: comp.ticket_price_pence,
+            product_data: {
+              name: `${comp.title} — ${data.quantity} ticket${data.quantity > 1 ? "s" : ""}`,
+              description: `Holiday to ${comp.destination}. Draw will assign your ticket numbers if you win.`,
+              images: comp.hero_image ? [comp.hero_image] : undefined,
+            },
+          },
+        },
+      ],
+      ...(email && { customer_email: email }),
       metadata: {
         user_id: userId,
         competition_id: comp.id,
         ticket_numbers: picked.join(","),
+      },
+      payment_intent_data: {
+        metadata: {
+          user_id: userId,
+          competition_id: comp.id,
+          ticket_numbers: picked.join(","),
+        },
       },
     });
 
@@ -74,12 +105,13 @@ export const createTicketCheckout = createServerFn({ method: "POST" })
       stripe_session_id: session.id,
     }));
     const { error: insErr } = await supabaseAdmin.from("tickets").insert(rows);
-    if (insErr) {
-      // best-effort cleanup not required; checkout will simply expire
-      throw new Error(insErr.message);
-    }
+    if (insErr) throw new Error(insErr.message);
 
-    return { url: session.url, sessionId: session.id };
+    return {
+      clientSecret: session.client_secret as string,
+      sessionId: session.id,
+      environment: getStripeEnv(),
+    };
   });
 
 export const getCheckoutResult = createServerFn({ method: "GET" })
