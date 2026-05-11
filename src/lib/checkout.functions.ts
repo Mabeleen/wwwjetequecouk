@@ -1,5 +1,4 @@
 import { createServerFn } from "@tanstack/react-start";
-import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { z } from "zod";
 import { getRequestHost } from "@tanstack/react-start/server";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
@@ -8,7 +7,6 @@ import { createStripeClient } from "./stripe.server";
 const RESERVATION_TTL_MIN = 45;
 
 export const createTicketCheckout = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
   .inputValidator((d) =>
     z
       .object({
@@ -16,11 +14,15 @@ export const createTicketCheckout = createServerFn({ method: "POST" })
         quantity: z.number().int().min(1).max(50),
         returnUrl: z.string().url(),
         environment: z.enum(["sandbox", "live"]),
+        accessToken: z.string().min(1),
       })
       .parse(d)
   )
-  .handler(async ({ data, context }) => {
-    const { userId, claims } = context;
+  .handler(async ({ data }) => {
+    const { data: authData, error: authError } = await supabaseAdmin.auth.getUser(data.accessToken);
+    if (authError || !authData.user) throw new Response("Unauthorized", { status: 401 });
+
+    const userId = authData.user.id;
     const host = getRequestHost();
     const environment = data.environment;
     const stripe = createStripeClient(environment);
@@ -64,7 +66,7 @@ export const createTicketCheckout = createServerFn({ method: "POST" })
     const returnUrl = data.returnUrl.includes("{CHECKOUT_SESSION_ID}")
       ? data.returnUrl
       : fallbackReturnUrl;
-    const email = (claims as any)?.email as string | undefined;
+    const email = authData.user.email;
 
     // Create Embedded Checkout session
     let session;
