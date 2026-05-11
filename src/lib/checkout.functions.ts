@@ -13,7 +13,7 @@ export const createTicketCheckout = createServerFn({ method: "POST" })
       .object({
         competitionId: z.string().uuid(),
         quantity: z.number().int().min(1).max(50),
-        returnUrl: z.string().url(),
+        returnUrl: z.string().min(1),
         environment: z.enum(["sandbox", "live"]),
         accessToken: z.string().min(1),
       })
@@ -64,7 +64,7 @@ export const createTicketCheckout = createServerFn({ method: "POST" })
     // Build URLs
     const fallbackProto = host.includes("localhost") ? "http" : "https";
     const fallbackReturnUrl = `${fallbackProto}://${host}/checkout/success?session_id={CHECKOUT_SESSION_ID}`;
-    const returnUrl = data.returnUrl.includes("{CHECKOUT_SESSION_ID}")
+    const returnUrl = data.returnUrl.startsWith("http") && data.returnUrl.includes("{CHECKOUT_SESSION_ID}")
       ? data.returnUrl
       : fallbackReturnUrl;
     const email = authData.user.email;
