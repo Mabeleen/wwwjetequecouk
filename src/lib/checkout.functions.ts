@@ -3,23 +3,9 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { z } from "zod";
 import { getRequestHost } from "@tanstack/react-start/server";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
-import { createStripeClient, type StripeEnv } from "./stripe.server";
+import { createStripeClient } from "./stripe.server";
 
 const RESERVATION_TTL_MIN = 45;
-
-function getCheckoutEnvironment(host: string): StripeEnv {
-  const normalizedHost = host.toLowerCase();
-  if (
-    normalizedHost.includes("localhost") ||
-    normalizedHost.includes("127.0.0.1") ||
-    normalizedHost.includes("lovableproject.com") ||
-    normalizedHost.includes("id-preview--") ||
-    normalizedHost.includes("-dev.lovable.app")
-  ) {
-    return "sandbox";
-  }
-  return "live";
-}
 
 export const createTicketCheckout = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
