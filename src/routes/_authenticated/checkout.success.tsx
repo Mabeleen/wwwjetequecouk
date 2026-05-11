@@ -60,7 +60,7 @@ function SuccessPage() {
                   Your {tickets.length} ticket{tickets.length === 1 ? "" : "s"}
                 </div>
                 <div className="flex flex-wrap gap-1.5">
-                  {tickets.map((t) => (
+                  {tickets.map((t: { ticket_number: number }) => (
                     <span
                       key={t.ticket_number}
                       className="rounded-md bg-gradient-tropical px-2.5 py-1 text-xs font-bold text-primary-foreground tabular-nums"

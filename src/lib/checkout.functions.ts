@@ -3,38 +3,29 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { z } from "zod";
 import { getRequestHost } from "@tanstack/react-start/server";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
-import { createStripeClient, type StripeEnv } from "./stripe.server";
+import { createStripeClient } from "./stripe.server";
 
 const RESERVATION_TTL_MIN = 45;
 
-function getCheckoutEnvironment(host: string): StripeEnv {
-  const normalizedHost = host.toLowerCase();
-  if (
-    normalizedHost.includes("localhost") ||
-    normalizedHost.includes("127.0.0.1") ||
-    normalizedHost.includes("lovableproject.com") ||
-    normalizedHost.includes("id-preview--") ||
-    normalizedHost.includes("-dev.lovable.app")
-  ) {
-    return "sandbox";
-  }
-  return "live";
-}
-
 export const createTicketCheckout = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
   .inputValidator((d) =>
     z
       .object({
         competitionId: z.string().uuid(),
         quantity: z.number().int().min(1).max(50),
+        returnUrl: z.string().min(1),
+        environment: z.enum(["sandbox", "live"]),
+        accessToken: z.string().min(1),
       })
       .parse(d)
   )
-  .handler(async ({ data, context }) => {
-    const { userId, claims } = context;
+  .handler(async ({ data }) => {
+    const { data: authData, error: authError } = await supabaseAdmin.auth.getUser(data.accessToken);
+    if (authError || !authData.user) throw new Response("Unauthorized", { status: 401 });
+
+    const userId = authData.user.id;
     const host = getRequestHost();
-    const environment = getCheckoutEnvironment(host);
+    const environment = data.environment;
     const stripe = createStripeClient(environment);
 
     // Load competition
@@ -71,9 +62,12 @@ export const createTicketCheckout = createServerFn({ method: "POST" })
     const picked = available.slice(0, data.quantity);
 
     // Build URLs
-    const proto = host.includes("localhost") ? "http" : "https";
-    const origin = `${proto}://${host}`;
-    const email = (claims as any)?.email as string | undefined;
+    const fallbackProto = host.includes("localhost") ? "http" : "https";
+    const fallbackReturnUrl = `${fallbackProto}://${host}/checkout/success?session_id={CHECKOUT_SESSION_ID}`;
+    const returnUrl = data.returnUrl.startsWith("http") && data.returnUrl.includes("{CHECKOUT_SESSION_ID}")
+      ? data.returnUrl
+      : fallbackReturnUrl;
+    const email = authData.user.email;
 
     // Create Embedded Checkout session
     let session;
@@ -81,7 +75,7 @@ export const createTicketCheckout = createServerFn({ method: "POST" })
       session = await stripe.checkout.sessions.create({
         mode: "payment",
         ui_mode: "embedded_page",
-        return_url: `${origin}/checkout/success?session_id={CHECKOUT_SESSION_ID}`,
+        return_url: returnUrl,
         expires_at: Math.floor(Date.now() / 1000) + RESERVATION_TTL_MIN * 60,
         line_items: [
           {
