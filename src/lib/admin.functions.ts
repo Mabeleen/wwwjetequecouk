@@ -133,7 +133,7 @@ export const adminAddWinner = createServerFn({ method: "POST" })
         competition_id: z.string().uuid(),
         winner_name: z.string().min(1),
         winner_location: z.string().optional().nullable(),
-        ticket_number: z.number().int().min(1).optional().nullable(),
+        ticket_number: z.number().int().min(1),
         story: z.string().optional().nullable(),
         photo_url: z.string().optional().nullable(),
       })

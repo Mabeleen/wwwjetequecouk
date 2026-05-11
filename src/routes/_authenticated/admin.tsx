@@ -426,13 +426,13 @@ function WinnersTab() {
             </div>
             <DialogFooter>
               <Button
-                disabled={addMut.isPending || !form.competition_id || !form.winner_name}
+                disabled={addMut.isPending || !form.competition_id || !form.winner_name || !form.ticket_number}
                 onClick={() =>
                   addMut.mutate({
                     competition_id: form.competition_id,
                     winner_name: form.winner_name,
                     winner_location: form.winner_location || null,
-                    ticket_number: form.ticket_number ? Number(form.ticket_number) : null,
+                    ticket_number: Number(form.ticket_number),
                     story: form.story || null,
                     photo_url: form.photo_url || null,
                   })
