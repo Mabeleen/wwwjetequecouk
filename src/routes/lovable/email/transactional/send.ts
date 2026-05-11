@@ -107,12 +107,7 @@ export const Route = createFileRoute("/lovable/email/transactional/send")({
 
         if (!template) {
           console.error('Template not found in registry', { templateName })
-          return Response.json(
-            {
-              error: `Template '${templateName}' not found. Available: ${Object.keys(TEMPLATES).join(', ')}`,
-            },
-            { status: 404 }
-          )
+          return Response.json({ error: 'Template not found' }, { status: 404 })
         }
 
         // Resolve effective recipient: template-level `to` takes precedence over
