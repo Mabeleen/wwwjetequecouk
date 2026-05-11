@@ -11,7 +11,6 @@ import {
 import appCss from "../styles.css?url";
 import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
-import { PaymentTestModeBanner } from "@/components/payment-test-mode-banner";
 import { Toaster } from "@/components/ui/sonner";
 
 function NotFoundComponent() {
@@ -60,9 +59,13 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { name: "description", content: "JETEQUE runs live holiday prize draws. Win trips to Thailand, the Maldives, Bali and more from just £5 per ticket." },
       { name: "author", content: "JETEQUE" },
       { property: "og:title", content: "JETEQUE — Win Dream Holidays for £5" },
-      { property: "og:description", content: "Live holiday competitions. Real winners. Tickets from £5." },
+      { property: "og:description", content: "JETEQUE runs live holiday prize draws. Win trips to Thailand, the Maldives, Bali and more from just £5 per ticket." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
+      { name: "twitter:title", content: "JETEQUE — Win Dream Holidays for £5" },
+      { name: "twitter:description", content: "JETEQUE runs live holiday prize draws. Win trips to Thailand, the Maldives, Bali and more from just £5 per ticket." },
+      { property: "og:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/871f2d6e-0cdf-4bbb-82f9-c9ab06a3c1fb/id-preview-55d0c92e--34114d1d-b0ce-41e7-a5eb-35c8943983c4.lovable.app-1778507731257.png" },
+      { name: "twitter:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/871f2d6e-0cdf-4bbb-82f9-c9ab06a3c1fb/id-preview-55d0c92e--34114d1d-b0ce-41e7-a5eb-35c8943983c4.lovable.app-1778507731257.png" },
     ],
     links: [{ rel: "stylesheet", href: appCss }, { rel: "preconnect", href: "https://images.unsplash.com" }],
   }),
@@ -91,7 +94,6 @@ function RootComponent() {
   return (
     <QueryClientProvider client={queryClient}>
       <div className="min-h-screen flex flex-col">
-        <PaymentTestModeBanner />
         <SiteHeader />
         <main className="flex-1">
           <Outlet />
