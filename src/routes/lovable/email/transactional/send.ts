@@ -59,6 +59,20 @@ export const Route = createFileRoute("/lovable/email/transactional/send")({
           return Response.json({ error: 'Unauthorized' }, { status: 401 })
         }
 
+        // Admin-only: prevent arbitrary authenticated users from sending
+        // emails from the app's verified domain to arbitrary recipients.
+        // Server-to-server triggers (webhooks, etc.) should use the
+        // enqueueTransactionalEmail helper directly with the service role.
+        const { data: adminRow, error: adminError } = await supabase
+          .from('user_roles')
+          .select('role')
+          .eq('user_id', user.id)
+          .eq('role', 'admin')
+          .maybeSingle()
+        if (adminError || !adminRow) {
+          return Response.json({ error: 'Forbidden' }, { status: 403 })
+        }
+
         // Parse request body
         let templateName: string
         let recipientEmail: string
@@ -93,12 +107,7 @@ export const Route = createFileRoute("/lovable/email/transactional/send")({
 
         if (!template) {
           console.error('Template not found in registry', { templateName })
-          return Response.json(
-            {
-              error: `Template '${templateName}' not found. Available: ${Object.keys(TEMPLATES).join(', ')}`,
-            },
-            { status: 404 }
-          )
+          return Response.json({ error: 'Template not found' }, { status: 404 })
         }
 
         // Resolve effective recipient: template-level `to` takes precedence over
