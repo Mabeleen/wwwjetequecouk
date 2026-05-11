@@ -24,7 +24,7 @@ const AdminSaleNotificationEmail = ({
 }: Props) => (
   <Html lang="en" dir="ltr">
     <Head />
-    <Preview>New ticket sale: {quantity} × {competitionTitle} ({totalGbp})</Preview>
+    <Preview>{`New ticket sale: ${quantity} × ${competitionTitle} (${totalGbp})`}</Preview>
     <Body style={main}>
       <Container style={container}>
         <Heading style={h1}>💰 New ticket sale</Heading>
