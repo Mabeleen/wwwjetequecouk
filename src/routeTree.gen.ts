@@ -9,38 +9,181 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as WinnersRouteImport } from './routes/winners'
+import { Route as HowItWorksRouteImport } from './routes/how-it-works'
+import { Route as FaqRouteImport } from './routes/faq'
+import { Route as CompetitionsRouteImport } from './routes/competitions'
+import { Route as AuthRouteImport } from './routes/auth'
+import { Route as AuthenticatedRouteImport } from './routes/_authenticated'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as CompetitionsSlugRouteImport } from './routes/competitions.$slug'
+import { Route as AuthenticatedAccountRouteImport } from './routes/_authenticated/account'
 
+const WinnersRoute = WinnersRouteImport.update({
+  id: '/winners',
+  path: '/winners',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const HowItWorksRoute = HowItWorksRouteImport.update({
+  id: '/how-it-works',
+  path: '/how-it-works',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const FaqRoute = FaqRouteImport.update({
+  id: '/faq',
+  path: '/faq',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CompetitionsRoute = CompetitionsRouteImport.update({
+  id: '/competitions',
+  path: '/competitions',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AuthRoute = AuthRouteImport.update({
+  id: '/auth',
+  path: '/auth',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AuthenticatedRoute = AuthenticatedRouteImport.update({
+  id: '/_authenticated',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const CompetitionsSlugRoute = CompetitionsSlugRouteImport.update({
+  id: '/$slug',
+  path: '/$slug',
+  getParentRoute: () => CompetitionsRoute,
+} as any)
+const AuthenticatedAccountRoute = AuthenticatedAccountRouteImport.update({
+  id: '/account',
+  path: '/account',
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/auth': typeof AuthRoute
+  '/competitions': typeof CompetitionsRouteWithChildren
+  '/faq': typeof FaqRoute
+  '/how-it-works': typeof HowItWorksRoute
+  '/winners': typeof WinnersRoute
+  '/account': typeof AuthenticatedAccountRoute
+  '/competitions/$slug': typeof CompetitionsSlugRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/auth': typeof AuthRoute
+  '/competitions': typeof CompetitionsRouteWithChildren
+  '/faq': typeof FaqRoute
+  '/how-it-works': typeof HowItWorksRoute
+  '/winners': typeof WinnersRoute
+  '/account': typeof AuthenticatedAccountRoute
+  '/competitions/$slug': typeof CompetitionsSlugRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/_authenticated': typeof AuthenticatedRouteWithChildren
+  '/auth': typeof AuthRoute
+  '/competitions': typeof CompetitionsRouteWithChildren
+  '/faq': typeof FaqRoute
+  '/how-it-works': typeof HowItWorksRoute
+  '/winners': typeof WinnersRoute
+  '/_authenticated/account': typeof AuthenticatedAccountRoute
+  '/competitions/$slug': typeof CompetitionsSlugRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/'
+  fullPaths:
+    | '/'
+    | '/auth'
+    | '/competitions'
+    | '/faq'
+    | '/how-it-works'
+    | '/winners'
+    | '/account'
+    | '/competitions/$slug'
   fileRoutesByTo: FileRoutesByTo
-  to: '/'
-  id: '__root__' | '/'
+  to:
+    | '/'
+    | '/auth'
+    | '/competitions'
+    | '/faq'
+    | '/how-it-works'
+    | '/winners'
+    | '/account'
+    | '/competitions/$slug'
+  id:
+    | '__root__'
+    | '/'
+    | '/_authenticated'
+    | '/auth'
+    | '/competitions'
+    | '/faq'
+    | '/how-it-works'
+    | '/winners'
+    | '/_authenticated/account'
+    | '/competitions/$slug'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AuthenticatedRoute: typeof AuthenticatedRouteWithChildren
+  AuthRoute: typeof AuthRoute
+  CompetitionsRoute: typeof CompetitionsRouteWithChildren
+  FaqRoute: typeof FaqRoute
+  HowItWorksRoute: typeof HowItWorksRoute
+  WinnersRoute: typeof WinnersRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/winners': {
+      id: '/winners'
+      path: '/winners'
+      fullPath: '/winners'
+      preLoaderRoute: typeof WinnersRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/how-it-works': {
+      id: '/how-it-works'
+      path: '/how-it-works'
+      fullPath: '/how-it-works'
+      preLoaderRoute: typeof HowItWorksRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/faq': {
+      id: '/faq'
+      path: '/faq'
+      fullPath: '/faq'
+      preLoaderRoute: typeof FaqRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/competitions': {
+      id: '/competitions'
+      path: '/competitions'
+      fullPath: '/competitions'
+      preLoaderRoute: typeof CompetitionsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/auth': {
+      id: '/auth'
+      path: '/auth'
+      fullPath: '/auth'
+      preLoaderRoute: typeof AuthRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/_authenticated': {
+      id: '/_authenticated'
+      path: ''
+      fullPath: '/'
+      preLoaderRoute: typeof AuthenticatedRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/': {
       id: '/'
       path: '/'
@@ -48,12 +191,66 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/competitions/$slug': {
+      id: '/competitions/$slug'
+      path: '/$slug'
+      fullPath: '/competitions/$slug'
+      preLoaderRoute: typeof CompetitionsSlugRouteImport
+      parentRoute: typeof CompetitionsRoute
+    }
+    '/_authenticated/account': {
+      id: '/_authenticated/account'
+      path: '/account'
+      fullPath: '/account'
+      preLoaderRoute: typeof AuthenticatedAccountRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
   }
 }
 
+interface AuthenticatedRouteChildren {
+  AuthenticatedAccountRoute: typeof AuthenticatedAccountRoute
+}
+
+const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
+  AuthenticatedAccountRoute: AuthenticatedAccountRoute,
+}
+
+const AuthenticatedRouteWithChildren = AuthenticatedRoute._addFileChildren(
+  AuthenticatedRouteChildren,
+)
+
+interface CompetitionsRouteChildren {
+  CompetitionsSlugRoute: typeof CompetitionsSlugRoute
+}
+
+const CompetitionsRouteChildren: CompetitionsRouteChildren = {
+  CompetitionsSlugRoute: CompetitionsSlugRoute,
+}
+
+const CompetitionsRouteWithChildren = CompetitionsRoute._addFileChildren(
+  CompetitionsRouteChildren,
+)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AuthenticatedRoute: AuthenticatedRouteWithChildren,
+  AuthRoute: AuthRoute,
+  CompetitionsRoute: CompetitionsRouteWithChildren,
+  FaqRoute: FaqRoute,
+  HowItWorksRoute: HowItWorksRoute,
+  WinnersRoute: WinnersRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
