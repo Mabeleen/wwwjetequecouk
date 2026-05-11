@@ -44,6 +44,9 @@ export function SiteHeader() {
               <Button asChild variant="ghost" size="sm">
                 <Link to="/account">My tickets</Link>
               </Button>
+              <Button asChild variant="ghost" size="sm">
+                <Link to="/admin">Admin</Link>
+              </Button>
               <Button size="sm" variant="outline" onClick={() => signOut()}>
                 Sign out
               </Button>
