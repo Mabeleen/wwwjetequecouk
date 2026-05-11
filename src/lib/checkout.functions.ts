@@ -3,9 +3,23 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { z } from "zod";
 import { getRequestHost } from "@tanstack/react-start/server";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
-import { createStripeClient, getStripeEnv } from "./stripe.server";
+import { createStripeClient, type StripeEnv } from "./stripe.server";
 
-const RESERVATION_TTL_MIN = 30;
+const RESERVATION_TTL_MIN = 45;
+
+function getCheckoutEnvironment(host: string): StripeEnv {
+  const normalizedHost = host.toLowerCase();
+  if (
+    normalizedHost.includes("localhost") ||
+    normalizedHost.includes("127.0.0.1") ||
+    normalizedHost.includes("lovableproject.com") ||
+    normalizedHost.includes("id-preview--") ||
+    normalizedHost.includes("-dev.lovable.app")
+  ) {
+    return "sandbox";
+  }
+  return "live";
+}
 
 export const createTicketCheckout = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
@@ -19,7 +33,9 @@ export const createTicketCheckout = createServerFn({ method: "POST" })
   )
   .handler(async ({ data, context }) => {
     const { userId, claims } = context;
-    const stripe = createStripeClient();
+    const host = getRequestHost();
+    const environment = getCheckoutEnvironment(host);
+    const stripe = createStripeClient(environment);
 
     // Load competition
     const { data: comp, error: cErr } = await supabaseAdmin
@@ -30,7 +46,7 @@ export const createTicketCheckout = createServerFn({ method: "POST" })
     if (cErr || !comp) throw new Error("Competition not found");
     if (comp.status !== "live") throw new Error("Competition is not open");
 
-    // Sweep abandoned reservations (>30min, unpaid) before allocating
+    // Sweep abandoned reservations (>45min, unpaid) before allocating
     const cutoff = new Date(Date.now() - RESERVATION_TTL_MIN * 60_000).toISOString();
     await supabaseAdmin
       .from("tickets")
@@ -55,7 +71,6 @@ export const createTicketCheckout = createServerFn({ method: "POST" })
     const picked = available.slice(0, data.quantity);
 
     // Build URLs
-    const host = getRequestHost();
     const proto = host.includes("localhost") ? "http" : "https";
     const origin = `${proto}://${host}`;
     const email = (claims as any)?.email as string | undefined;
@@ -102,7 +117,7 @@ export const createTicketCheckout = createServerFn({ method: "POST" })
         type: err?.type,
         code: err?.code,
         raw: err?.raw,
-        env: getStripeEnv(),
+        env: environment,
       });
       throw new Error(`Stripe checkout failed: ${err?.message ?? "unknown"}`);
     }
@@ -130,7 +145,7 @@ export const createTicketCheckout = createServerFn({ method: "POST" })
     return {
       clientSecret: session.client_secret,
       sessionId: session.id,
-      environment: getStripeEnv(),
+      environment,
     };
   });
 
