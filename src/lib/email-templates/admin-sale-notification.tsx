@@ -29,7 +29,7 @@ const AdminSaleNotificationEmail = ({
       <Container style={container}>
         <Heading style={h1}>💰 New ticket sale</Heading>
         <Text style={text}><strong>Competition:</strong> {competitionTitle}</Text>
-        <Text style={text}><strong>Quantity:</strong> {quantity}</Text>
+        <Text style={text}><strong>Quantity:</strong> {String(quantity)}</Text>
         <Text style={text}><strong>Total:</strong> {totalGbp}</Text>
         <Text style={text}>
           <strong>Buyer:</strong> {buyerName ? `${buyerName} ` : ""}&lt;{buyerEmail}&gt;
