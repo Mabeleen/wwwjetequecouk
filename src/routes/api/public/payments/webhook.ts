@@ -168,7 +168,10 @@ export const Route = createFileRoute("/api/public/payments/webhook")({
             type === "transaction.completed" ||
             type === "payment_intent.succeeded"
           ) {
-            if (sessionId) await markSessionPaid(sessionId);
+            if (sessionId) {
+              await markSessionPaid(sessionId);
+              await sendPurchaseEmails(sessionId);
+            }
             else if (meta.user_id && meta.competition_id) {
               // Fallback: mark by metadata
               await supabaseAdmin
